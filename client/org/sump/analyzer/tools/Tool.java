@@ -28,7 +28,7 @@ import org.sump.analyzer.CapturedData;
  * All tools implementing this interface that are added to the tools class list
  * will be automatically added to the tools menu in the client.
  * 
- * @version 0.6
+ * @version 0.7
  * @author Michael "Mr. Sump" Poppitz
  */
 public interface Tool {

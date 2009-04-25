@@ -21,7 +21,6 @@ package org.sump.analyzer;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -29,26 +28,26 @@ import java.awt.event.ActionListener;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+
+import org.sump.util.Properties;
 
 /**
  * Stores diagram display settings and provides a dialog for changing them.
  * 
- * @version 0.6
+ * @version 0.7
  * @author Michael "Mr. Sump" Poppitz
  */
-public class DiagramSettings extends JComponent implements ActionListener {
+public class DiagramSettings extends JComponent implements ActionListener, Configurable {
 	/** the user cancelled the dialog - all changes were discarded */
 	public final static int CANCEL = 0;
 	/** the user clicked ok - all changes were written to the settings */
 	public final static int OK = 1;
 	/** display a group in 8 channel logic level view (used in <code>groupSettings</code>)*/
-	public final static int DISPLAY_ANALYZER = 1;
+	public final static int DISPLAY_CHANNELS = 1;
 	/** display a group in a 8bit resolution scope view (used in <code>groupSettings</code>)*/
 	public final static int DISPLAY_SCOPE = 2;
 	/** display a group in a 8bit hex value view (used in <code>groupSettings</code>)*/
@@ -104,7 +103,7 @@ public class DiagramSettings extends JComponent implements ActionListener {
 
 		groupSettings = new int[4];
 		for (int i = 0; i < groupSettings.length; i++)
-			groupSettings[i] = DISPLAY_ANALYZER | DISPLAY_BYTE;		
+			groupSettings[i] = DISPLAY_CHANNELS | DISPLAY_BYTE;		
 	}
 	
 	/**
@@ -145,7 +144,7 @@ public class DiagramSettings extends JComponent implements ActionListener {
 			}
 			result = OK;
 		}	
-		dialog.hide();
+		dialog.setVisible(false);
 	}
 
 	/**
@@ -159,16 +158,47 @@ public class DiagramSettings extends JComponent implements ActionListener {
 		initDialog(frame);
 		updateFields();
 		result = CANCEL;
-		dialog.show();
+		dialog.setVisible(true);
 		return (result);
 	}
 	
+	public void readProperties(Properties properties) {
+		String value;
+		
+		for (int i = 0; i < 4; i++) {
+			value = properties.getProperty("DiagramSettings.group" + i);
+			if (value != null) {
+				groupSettings[i] = 0;
+				if (value.indexOf("channels") >= 0)
+					groupSettings[i] |= DISPLAY_CHANNELS;
+				if (value.indexOf("scope") >= 0)
+					groupSettings[i] |= DISPLAY_SCOPE;
+				if (value.indexOf("byte") >= 0)
+					groupSettings[i] |= DISPLAY_BYTE;
+			}
+		}
+		updateFields();
+	}
+	
+	public void writeProperties(Properties properties) {
+		for (int i = 0; i < 4; i++) {
+			StringBuffer value = new StringBuffer();
+			if ((groupSettings[i] & DISPLAY_CHANNELS) != 0)
+				value.append("channels ");
+			if ((groupSettings[i] & DISPLAY_SCOPE) != 0)
+				value.append("scope ");
+			if ((groupSettings[i] & DISPLAY_BYTE) != 0)
+				value.append("byte ");
+			properties.setProperty("DiagramSettings.group" + i, value.toString());
+		}
+	}
+
 	/**
 	 * Display settings for each group.
 	 * Can be any combinations (ored) of the defined MODE_* values.
 	 */
 	public int[] groupSettings;
-	
+
 	private JDialog dialog;
 	private JCheckBox[][] groupSettingBoxes;
 	private int result;

@@ -23,24 +23,25 @@ import java.awt.Frame;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import org.sump.util.Properties;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 
 import org.sump.analyzer.CapturedData;
+import org.sump.analyzer.Configurable;
 
 /**
  * Tool to convert captured data for state analysis using a user selected channel as clock.
  * Wether sampling should be performed on rising or falling edge can be selected too.
  * 
- * @version 0.6
+ * @version 0.7
  * @author Michael "Mr. Sump" Poppitz
  */
-public class StateAnalysis extends Object implements Tool {
+public class StateAnalysis extends Base implements Tool, Configurable {
 
 	private class StateAnalysisDialog extends JDialog implements ActionListener {
 		public final static int CANCEL = 0;
@@ -54,14 +55,15 @@ public class StateAnalysis extends Object implements Tool {
 			pane.setLayout(new GridLayout(3, 2, 5, 5));
 			getRootPane().setBorder(BorderFactory.createLineBorder(getBackground(), 5));
 
-			String[] channels = new String[32];
+			channels = new String[32];
 			for (int i = 0; i < channels.length; i++)
 				channels[i] = Integer.toString(i);
 			channelSelect = new JComboBox(channels);
 			pane.add(new JLabel("Clock Channel:"));
 			pane.add(channelSelect);
 
-			String[] edges = {"Rising", "Falling"};
+			String[] tmp = {"Rising", "Falling"};
+			edges = tmp;
 			edgeSelect = new JComboBox(edges);
 			pane.add(new JLabel("Clock Edge:"));
 			pane.add(edgeSelect);
@@ -98,11 +100,23 @@ public class StateAnalysis extends Object implements Tool {
 			hide();
 		}
 
+		public void readProperties(Properties properties) {
+			selectByValue(edgeSelect, edges, properties.getProperty("tools.StateAnalysis.edge"));
+			selectByValue(channelSelect, channels, properties.getProperty("tools.StateAnalysis.channel"));
+		}
+
+		public void writeProperties(Properties properties) {
+			properties.setProperty("tools.StateAnalysis.channel", (String)channelSelect.getSelectedItem());
+			properties.setProperty("tools.StateAnalysis.edge", (String)edgeSelect.getSelectedItem());
+		}
+
 		public int channel;
 		public int edge;
 		
 		private JComboBox edgeSelect;
 		private JComboBox channelSelect;
+		private String[] edges;
+		private String[] channels;
 		private int result;
 	}
 	
@@ -171,10 +185,19 @@ public class StateAnalysis extends Object implements Tool {
 	}
 	
 	/**
-	 * Alias for <code>process(CapturedData data)</code> at this time. Should be using the supplied channel to preselect value in dialog.
+	 * Reads dialog settings from given properties.
+	 * @param properties Properties containing dialog settings
 	 */
-	public CapturedData process(CapturedData data, int group, int channel, int position) {
-		return (process(data));
+	public void readProperties(Properties properties) {
+		sad.readProperties(properties);
+	}
+
+	/**
+	 * Writes dialog settings to given properties.
+	 * @param properties Properties where the settings are written to
+	 */
+	public void writeProperties(Properties properties) {
+		sad.writeProperties(properties);
 	}
 	
 	private StateAnalysisDialog sad;

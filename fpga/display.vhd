@@ -19,7 +19,7 @@
 --
 ----------------------------------------------------------------------------------
 --
--- Details: http://sump.org/projects/analyzer/
+-- Details: http://www.sump.org/projects/analyzer/
 --
 -- Provides 7 segment display multiplexing.
 -- No encoding is performed. Input will be displayed in raw format.
@@ -61,7 +61,7 @@ begin
 
 	process(clock)
 	begin
-		if clock = '1' and clock'event then
+		if rising_edge(clock) then
 			counter <= counter + 1;
 		end if;
 	end process;

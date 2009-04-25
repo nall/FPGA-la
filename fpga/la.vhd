@@ -19,11 +19,11 @@
 --
 ----------------------------------------------------------------------------------
 --
--- Details: http://sump.org/projects/analyzer/
+-- Details: http://www.sump.org/projects/analyzer/
 --
--- Logic Analyzer top level module. It connects all the other modules
--- and defines all inputs and outputs that representent phyisical pins of
--- the fpga.
+-- Logic Analyzer top level module. It connects the core with the hardware
+-- dependend IO modules and defines all inputs and outputs that represent
+-- phyisical pins of the fpga.
 --
 -- It defines two constants FREQ and RATE. The first is the clock frequency 
 -- used for receiver and transmitter for generating the proper baud rate.
@@ -36,18 +36,24 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
+library UNISIM;
+use UNISIM.VComponents.all;
+
 entity la is
 	Port(
-		clockIn : in std_logic;
 	   resetSwitch : in std_logic;
+		xtalClock : in std_logic;
+
+		exClock : in std_logic;
 		input : in std_logic_vector(31 downto 0);
+		ready50 : out std_logic;
+
 		rx : in std_logic;
 		tx : inout std_logic;
 
 		an : OUT std_logic_vector(3 downto 0);
 		segment : OUT std_logic_vector(7 downto 0);
 		led : OUT std_logic_vector(7 downto 0);
-
 		switch : in std_logic_vector(1 downto 0);
 
 		ramIO1 : INOUT std_logic_vector(15 downto 0);
@@ -68,71 +74,66 @@ architecture Behavioral of la is
 
 	COMPONENT clockman
 	PORT(
-		clkin : IN std_logic;       
-		clk0 : INOUT std_logic;
-		clk2x : INOUT std_logic
+		clkin : in  STD_LOGIC;
+		clk0 : out std_logic
 		);
 	END COMPONENT;
 	
-	COMPONENT receiver
+	COMPONENT display
+	PORT(
+		data : IN std_logic_vector(31 downto 0);
+		clock : IN std_logic;          
+		an : OUT std_logic_vector(3 downto 0);
+		segment : OUT std_logic_vector(7 downto 0)
+		);
+	END COMPONENT;
+
+	COMPONENT eia232
 	generic (
 		FREQ : integer;
+		SCALE : integer;
 		RATE : integer
 	);
 	PORT(
+		clock : IN std_logic;
+		reset : in std_logic;
+		speed : IN std_logic_vector(1 downto 0);
 		rx : IN std_logic;
-		clock : IN std_logic;    
-	   reset : in STD_LOGIC;
-		cmd : INOUT std_logic_vector(39 downto 0)
-	   );
-	END COMPONENT;
-
-	COMPONENT decoder
-	PORT ( opcode : in  STD_LOGIC_VECTOR (7 downto 0);
-			  clock : in std_logic;
-           wrtrigmask : out  STD_LOGIC;
-           wrtrigval : out  STD_LOGIC;
-			  wrspeed : out STD_LOGIC;
-			  wrsize : out std_logic;
-			  arm : out std_logic;
-			  reset : out std_logic
+		data : IN std_logic_vector(31 downto 0);
+		send : IN std_logic;          
+		tx : OUT std_logic;
+		cmd : OUT std_logic_vector(39 downto 0);
+		execute : OUT std_logic;
+		busy : OUT std_logic
 		);
 	END COMPONENT;
 	
-	COMPONENT filter
-	PORT(
-		input : IN std_logic_vector(31 downto 0);
-		clock2x : IN std_logic;
-		clock : IN std_logic;
-		output : OUT std_logic_vector(31 downto 0)
-		);
-	END COMPONENT;
-
-	COMPONENT trigger
-	PORT(
-		input : IN std_logic_vector(31 downto 0);
-		data : IN std_logic_vector(31 downto 0);
-	   clock : in std_logic;
-		reset : in std_logic;
-		wrMask : IN std_logic;
-		wrValue : IN std_logic;
-		arm : IN std_logic;          
-		run : OUT std_logic
-		);
-	END COMPONENT;
-
-	COMPONENT controller
+	COMPONENT core
 	PORT(
 		clock : IN std_logic;
-		reset : in std_logic;
-		input : IN std_logic_vector(31 downto 0);    
-		data : in std_logic_vector(31 downto 0);
-		wrSpeed : in std_logic;
-		wrSize : in std_logic;
-		run : in std_logic;
-		txBusy : in std_logic;
-		send : inout std_logic;
-		output : out std_logic_vector(31 downto 0);    
+		extReset : IN std_logic;
+		cmd : IN std_logic_vector(39 downto 0);
+		execute : IN std_logic;
+		input : IN std_logic_vector(31 downto 0);
+		inputClock : IN std_logic;
+		sampleReady50 : OUT std_logic;
+      output : out  STD_LOGIC_VECTOR (31 downto 0);
+      outputSend : out  STD_LOGIC;
+      outputBusy : in  STD_LOGIC;
+		memoryIn : IN std_logic_vector(31 downto 0);          
+		memoryOut : OUT std_logic_vector(31 downto 0);
+		memoryRead : OUT std_logic;
+		memoryWrite : OUT std_logic
+		);
+	END COMPONENT;
+	
+	COMPONENT sram
+	PORT(
+		clock : IN std_logic;
+		input : IN std_logic_vector(31 downto 0);
+		output : OUT std_logic_vector(31 downto 0);
+		read : IN std_logic;
+		write : IN std_logic;    
 		ramIO1 : INOUT std_logic_vector(15 downto 0);
 		ramIO2 : INOUT std_logic_vector(15 downto 0);      
 		ramA : OUT std_logic_vector(17 downto 0);
@@ -146,106 +147,74 @@ architecture Behavioral of la is
 		ramLB2 : OUT std_logic
 		);
 	END COMPONENT;
-
-	COMPONENT transmitter
-	generic (
-		FREQ : integer;
-		RATE : integer
-	);
-	PORT(
-		data : IN std_logic_vector(31 downto 0);
-		write : IN std_logic;
-		clock : IN std_logic;
-		tx : OUT std_logic;
-		busy : out std_logic
-		);
-	END COMPONENT;
-
-	COMPONENT display
-	PORT(
-		data : IN std_logic_vector(31 downto 0);
-		clock : IN std_logic;          
-		an : OUT std_logic_vector(3 downto 0);
-		segment : OUT std_logic_vector(7 downto 0)
-		);
-	END COMPONENT;
-
-signal command : std_logic_vector (39 downto 0);
-signal displayData : std_logic_vector (31 downto 0);
+	
+signal cmd : std_logic_vector (39 downto 0);
+signal memoryIn, memoryOut : std_logic_vector (31 downto 0);
 signal output : std_logic_vector (31 downto 0);
-signal wrtrigmask, wrtrigval, wrspeed, wrsize, run, arm, txBusy, send : std_logic;
-signal filteredInput : std_logic_vector (31 downto 0);
-signal clock, clock2x, reset, resetCmd: std_logic;
+signal clock : std_logic;
+signal read, write, execute, send, busy : std_logic;
 
-constant FREQ : integer := 100000000;
-constant RATE : integer := 115200;
+constant FREQ : integer := 100000000;				-- limited to 100M by onboard SRAM
+constant TRXSCALE : integer := 28; 					-- 100M / 28 / 115200 = 31 (5bit)
+constant RATE : integer := 115200;					-- maximum & base rate
 
 begin
-	-- switches and leds are kept in design to be available for debugging
-	led(7 downto 0) <= "0000" & switch & (tx, rx);
-	displayData <= output;
-
-	reset <= resetSwitch or resetCmd;
+	led(7 downto 0) <= exClock & "00" & switch & "000";
 
 	Inst_clockman: clockman PORT MAP(
-		clkin => clockIn,
-		clk0 => clock,
-		clk2x => clock2x
+		clkin => xtalClock,
+		clk0 => clock
 	);
-	
-	Inst_receiver: receiver
+
+	Inst_display: display PORT MAP(
+		data => memoryIn,
+		clock => clock,
+		an => an,
+		segment => segment
+	);
+
+	Inst_eia232: eia232
 	generic map (
 		FREQ => FREQ,
+		SCALE => TRXSCALE,
 		RATE => RATE
 	)
 	PORT MAP(
+		clock => clock,
+		reset => resetSwitch,
+		speed => switch,
 		rx => rx,
-		clock => clock,
-		reset => reset,
-		cmd => command
-	);
-
-	Inst_decoder: decoder PORT MAP(
-		opcode => command(7 downto 0),
-		clock => clock,
-		wrtrigmask => wrtrigmask,
-		wrtrigval => wrtrigval,
-		wrspeed => wrspeed,
-		wrsize => wrsize,
-		arm => arm,
-		reset => resetCmd
-	);
-
-
-	Inst_filter: filter PORT MAP(
-		input => input,
-		clock2x => clock2x,
-		clock => clock,
-		output => filteredInput
+		tx => tx,
+		cmd => cmd,
+		execute => execute,
+		data => output,
+		send => send,
+		busy => busy
 	);
 	
-	Inst_trigger: trigger PORT MAP(
-		input => filteredInput,
-		data => command(39 downto 8),
+	Inst_core: core PORT MAP(
 		clock => clock,
-		reset => reset,
-		wrMask => wrtrigmask,
-		wrValue => wrtrigval,
-		arm => arm,
-		run => run
+		extReset => resetSwitch,
+		cmd => cmd,
+		execute => execute,
+		input => input,
+		inputClock => exClock,
+		sampleReady50 => ready50,
+		output => output,
+		outputSend => send,
+		outputBusy => busy,
+		memoryIn => memoryIn,
+		memoryOut => memoryOut,
+		memoryRead => read,
+		memoryWrite => write
 	);
 
-	Inst_controller: controller PORT MAP(
+	Inst_sram: sram PORT MAP(
 		clock => clock,
-		reset => reset,
-		input => filteredInput,
-		data => command(39 downto 8),
-		wrSpeed => wrspeed,
-		wrSize => wrsize,
-		run => run,
-		txBusy => txBusy,
-		send => send,
-		output => output,
+		input => memoryOut,
+		output => memoryIn,
+		read => read,
+		write => write,
 		ramA => ramA,
 		ramWE => ramWE,
 		ramOE => ramOE,
@@ -258,26 +227,5 @@ begin
 		ramUB2 => ramUB2,
 		ramLB2 => ramLB2 
 	);
-
-	Inst_transmitter: transmitter
-	generic map (
-		FREQ => FREQ,
-		RATE => RATE
-	)
-	PORT MAP(
-		data => output,
-		write => send,
-		clock => clock,
-		tx => tx,
-		busy => txBusy
-	);
-	
-	Inst_display: display PORT MAP(
-		data => displayData,
-		clock => clock,
-		an => an,
-		segment => segment
-	);
-
 end Behavioral;
 

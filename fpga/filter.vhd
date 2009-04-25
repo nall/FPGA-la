@@ -19,16 +19,12 @@
 --
 ----------------------------------------------------------------------------------
 --
--- Details: http://sump.org/projects/analyzer/
+-- Details: http://www.sump.org/projects/analyzer/
 --
 -- Fast 32 channel digital noise filter using a single LUT function for each
--- individual channel. It will filter out all signals that are exactly one
--- clock cycle long. To not filter out good signals it runs at twice
--- the frequency as the maximum sampling rate.
---
--- Noise cancelation is important when connecting to 5V signals with high
--- slew rate, because cross talk will occur.
--- It may or may not be necessary with low voltage signals.
+-- individual channel. It will filter out all pulses that only appear for half
+-- a clock cycle. This way a pulse has to be at least 5-10ns long to be accepted
+-- as valid. This is sufficient for sample rates up to 100MHz.
 --
 ----------------------------------------------------------------------------------
 
@@ -39,49 +35,30 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 entity filter is
     Port ( input : in  STD_LOGIC_VECTOR (31 downto 0);
-			  clock2x : in std_logic;
+			  input180 : in  STD_LOGIC_VECTOR (31 downto 0);
 			  clock : in std_logic;
            output : out  STD_LOGIC_VECTOR (31 downto 0));
 end filter;
 
 architecture Behavioral of filter is
 
-signal lastInput, nresult, result : STD_LOGIC_VECTOR (31 downto 0);
+signal input360, input180Delay, result : STD_LOGIC_VECTOR (31 downto 0);
 
 begin
-	-- synchronize result with system clock
-	-- (result is stable for at least 2 clock2x cycles and thus always catched)
+
 	process(clock)
 	begin
-		if clock = '1' and clock'event then
-			output <= result;
+		if rising_edge(clock) then
+			-- determine next result
+			for i in 31 downto 0 loop
+				result(i) <= (result(i) or input360(i) or input(i)) and input180Delay(i);
+			end loop;
+
+			-- shift in input data
+			input360 <= input;
+			input180Delay <= input180;
 		end if;
 	end process;
-
-	-- perform result change on rising edge
-	process(clock2x)
-	begin
-		if clock2x = '1' and clock2x'event then
-			result <= nresult;
-			lastInput <= input;
-		end if;
-	end process;
-
-	-- determine next result
-	process(input, lastInput, result)
-	begin
-		for i in 31 downto 0 loop
-			if 
-				(input(i) = '0' and lastInput(i) = '0' and result(i) = '0')
-				or (input(i) = '0' and lastInput(i) = '0' and result(i) = '1')
-				or (input(i) = '0' and lastInput(i) = '1' and result(i) = '0')
-				or (input(i) = '1' and lastInput(i) = '0' and result(i) = '0')
-			then
-				nresult(i) <= '0';
-			else
-				nresult(i) <= '1';
-			end if;
-		end loop;
-	end process;
+	output <= result;
 
 end Behavioral;

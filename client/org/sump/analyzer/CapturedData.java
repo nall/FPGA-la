@@ -27,30 +27,39 @@ import java.io.IOException;
 
 /**
  * CapturedData encapsulates the data obtained by the analyzer during a single run.
- * It also provides a method for (partially) saving the data to a file.
+ * It also provides a method for saving the data to a file.
  * <p>
- * Data files will only contain the actual readout values. A value is a
+ * Data files will start with a header containing meta data marked by lines starting with ";".
+ * The actual readout values will follow after the header. A value is a
  * single logic level measurement of all channels at a particular time.
  * This means a value is 32bits long. The value is encoded in hex and
  * each value is followed by a new line.
  * <p>
  * In the java code each value is represented by an integer.
  * 
- * @version 0.3
+ * @version 0.7
  * @author Michael "Mr. Sump" Poppitz
  *
  */
 public class CapturedData extends Object {
+	/** indicates that rate or trigger position are not available */
+	public final static int NOT_AVAILABLE = -1;
+
 	/**
 	 * Constructs CapturedData based on the given data.
 	 * 
 	 * @param values 32bit values as read from device
 	 * @param triggerPosition position of trigger as index of values array
+	 * @param rate sampling rate (may be set to <code>NOT_AVAILABLE</code>)
+	 * @param channels number of used channels
+	 * @param enabledChannels bit mask identifying used channels
 	 */
-	protected CapturedData(int[] values, int triggerPosition, int rate) {
+	public CapturedData(int[] values, int triggerPosition, int rate, int channels, int enabledChannels) {
 		this.values = values;
 		this.triggerPosition = triggerPosition;
-		this.rate = rate; 
+		this.rate = rate;
+		this.channels = channels;
+		this.enabledChannels = enabledChannels;
 	}
 
 	/**
@@ -60,7 +69,7 @@ public class CapturedData extends Object {
 	 * @throws IOException when reading from file failes
 	 */
 	public CapturedData(File file) throws IOException {
-		int size = 0, r = -1, t = -1;
+		int size = 0, r = -1, t = -1, channels = 32, enabledChannels = -1;
 		String line;
 		BufferedReader br = new BufferedReader(new FileReader(file));
 		do {
@@ -71,8 +80,12 @@ public class CapturedData extends Object {
 				size = Integer.parseInt(line.substring(7));
 			else if (line.startsWith(";Rate: "))
 				r = Integer.parseInt(line.substring(7));
+			else if (line.startsWith(";Channels: "))
+				channels = Integer.parseInt(line.substring(11));
 			else if (line.startsWith(";TriggerPosition: "))
 				t = Integer.parseInt(line.substring(18));
+			else if (line.startsWith(";EnabledChannels: "))
+				enabledChannels = Integer.parseInt(line.substring(18));
 		} while (line.startsWith(";"));
 
 		if (size <= 0 || size > 1024 * 256)
@@ -81,17 +94,24 @@ public class CapturedData extends Object {
 		values = new int[size];
 		try {
 			for (int i = 0; i < values.length && line != null; i++) {
-				values[i] =
-					Integer.parseInt(line.substring(0, 4), 16) << 16
-					| Integer.parseInt(line.substring(4, 8), 16);
+				// TODO: modify to work with all channel counts up to 32
+				if (channels > 16) {
+					values[i] =
+						Integer.parseInt(line.substring(0, 4), 16) << 16
+						| Integer.parseInt(line.substring(4, 8), 16);
+				} else {
+					values[i] = Integer.parseInt(line.substring(0, 4), 16);					
+				}
 				line = br.readLine();
 			}
 		} catch (NumberFormatException E) {
 			throw new IOException("Invalid data encountered.");
 		}
 
-		triggerPosition = t;
-		rate = r;
+		this.triggerPosition = t;
+		this.rate = r;
+		this.channels = channels;
+		this.enabledChannels = enabledChannels;
 
 		br.close();
 	}
@@ -110,11 +130,18 @@ public class CapturedData extends Object {
 			bw.newLine();
 			bw.write(";Rate: " + rate);
 			bw.newLine();
-			bw.write(";TriggerPosition: " + triggerPosition);
+			bw.write(";Channels: " + channels);
 			bw.newLine();
+			bw.write(";EnabledChannels: " + enabledChannels);
+			bw.newLine();
+			if (triggerPosition >= 0) {
+				bw.write(";TriggerPosition: " + triggerPosition);
+				bw.newLine();
+			}
 			
 			for (int i = 0; i < values.length; i++) {
-				bw.write(Integer.toHexString(values[i]));
+				String hexVal = Integer.toHexString(values[i]);
+				bw.write("00000000".substring(hexVal.length()) + hexVal);
 				bw.newLine();
 			}
 			bw.close();
@@ -123,10 +150,30 @@ public class CapturedData extends Object {
 		}
 	}
 
+	/**
+	 * Returns wether or not the object contains timing data
+	 * @return <code>true</code> when timing data is available
+	 */
+	public boolean hasTimingData() {
+		return (rate != NOT_AVAILABLE);
+	}
+
+	/**
+	 * Returns wether or not the object contains trigger data
+	 * @return <code>true</code> when trigger data is available
+	 */
+	public boolean hasTriggerData() {
+		return (triggerPosition != NOT_AVAILABLE);
+	}
+
 	/** captured values */
 	public final int[] values;
 	/** position of trigger as index of values */
 	public final int triggerPosition;
 	/** sampling rate in Hz */
 	public final int rate;
+	/** number of channels (1-32) */
+	public final int channels;
+	/** bit map of enabled channels */
+	public final int enabledChannels;
 }

@@ -19,7 +19,7 @@
 --
 ----------------------------------------------------------------------------------
 --
--- Details: http://sump.org/projects/analyzer/
+-- Details: http://www.sump.org/projects/analyzer/
 --
 -- Flags register.
 --
@@ -32,11 +32,13 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 
 entity flags is
-    Port ( data : in  STD_LOGIC_VECTOR(1 downto 0);
+    Port ( data : in  STD_LOGIC_VECTOR(7 downto 0);
            clock : in  STD_LOGIC;
            write : in  STD_LOGIC;
            demux : out  STD_LOGIC;
-			  filter : out STD_LOGIC
+			  filter : out STD_LOGIC;
+			  external : out std_logic;
+			  inverted : out std_logic
 	 );
 end flags;
 
@@ -50,6 +52,8 @@ begin
 		if rising_edge(clock) and write = '1' then
 			demux <= data(0);
 			filter <= data(1);
+			external <= data(6);
+			inverted <= data(7);
 		end if;
 	end process;
 

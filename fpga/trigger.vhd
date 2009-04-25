@@ -19,15 +19,14 @@
 --
 ----------------------------------------------------------------------------------
 --
--- Details: http://sump.org/projects/analyzer/
+-- Details: http://www.sump.org/projects/analyzer/
 --
--- 32 channel trigger with programmable mask and value registers.
--- The trigger will output a one cycle run signal if armed and
--- the trigger condition is met. It is met when all bits of the
--- input indicated by mask register have the value indicated by
--- the matching bit of the value register.
--- The trigger will disarm itself after firing or when reset is set.
+-- Complex 4 stage 32 channel trigger. 
 --
+-- All commands are passed on to the stages. This file only maintains
+-- the global trigger level and it outputs the run condition if it is set
+-- by any of the stages.
+-- 
 ----------------------------------------------------------------------------------
 
 library IEEE;
@@ -37,57 +36,91 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 entity trigger is
     Port ( input : in  STD_LOGIC_VECTOR (31 downto 0);
+           inputReady : in std_logic;
            data : in  STD_LOGIC_VECTOR (31 downto 0);
 			  clock : in std_logic;
 			  reset : in std_logic;
-           wrMask : in  STD_LOGIC;
-           wrValue : in  STD_LOGIC;
+           wrMask : in STD_LOGIC_VECTOR (3 downto 0);
+           wrValue : in STD_LOGIC_VECTOR (3 downto 0);
+			  wrConfig : in STD_LOGIC_VECTOR (3 downto 0);
            arm : in  STD_LOGIC;
+			  demuxed : in std_logic;
            run : out  STD_LOGIC
 	);
 end trigger;
 
 architecture Behavioral of trigger is
-	signal	maskRegister : STD_LOGIC_VECTOR (31 downto 0);
-	signal	valueRegister : STD_LOGIC_VECTOR (31 downto 0);
-	signal	match, armed : STD_LOGIC;
+
+	COMPONENT stage
+	PORT(
+		input : IN std_logic_vector(31 downto 0);
+		inputReady : IN std_logic;
+		data : IN std_logic_vector(31 downto 0);
+		clock : IN std_logic;
+		reset : IN std_logic;
+		wrMask : IN std_logic;
+		wrValue : IN std_logic;
+		wrConfig : IN std_logic;
+		arm : IN std_logic;
+      level : in  std_logic_vector(1 downto 0);
+		demuxed : IN std_logic;          
+		run : OUT std_logic;
+		match : OUT std_logic
+		);
+	END COMPONENT;
+	
+	signal stageRun, stageMatch: std_logic_vector(3 downto 0);
+	signal levelReg : std_logic_vector(1 downto 0);
 
 begin
 
-	-- match indicates if the trigger condition is met
-	match <= '1' when ((input xor valueRegister) and maskRegister) = "00000000000000000000000000000000" else '0';
+	-- create stages
+	stages: for i in 0 to 3 generate
+		Inst_stage: stage PORT MAP(
+			input => input,
+			inputReady => inputReady,
+			data => data,
+			clock => clock,
+			reset => reset,
+			wrMask => wrMask(i),
+			wrValue => wrValue(i),
+			wrConfig => wrConfig(i),
+			arm => arm,
+			level => levelReg,
+			demuxed => demuxed,
+			run => stageRun(i),
+			match => stageMatch(i) 
+		);
+	end generate;
 
-	-- handle reset and arm requests; output run signal if armed and match
-	process(clock, reset)
+	-- increase level on match
+	process(clock, arm)
+		variable tmp : std_logic;
 	begin
-		if reset = '1' then
-			armed <= '0';
-			run <= '0';
-		elsif clock = '1' and clock'event then
-			if arm = '1' then
-				armed <= '1';
-			end if;
-			if match = '1' and armed = '1' then
-				armed <= '0';
-				run <= '1';
-			else
-				run <= '0';
+		if arm = '1' then
+			levelReg <= "00";
+		elsif rising_edge(clock) then
+			tmp := stageMatch(0);
+			for i in 1 to 3 loop
+				tmp := tmp or stageMatch(i);
+			end loop;
+			if tmp = '1' then
+				levelReg <= levelReg + 1;
 			end if;
 		end if;
+
+	end process;
+
+	-- if any of the stages set run, capturing starts
+	process(stageRun)
+		variable tmp : std_logic;
+	begin
+		tmp := stageRun(0);
+		for i in 1 to 3 loop
+			tmp := tmp or stageRun(i);
+		end loop;
+		run <= tmp;
 	end process;
 	
-	-- handle mask & value write requests
-	process(clock) 
-	begin
-		if clock = '1' and clock'event then
-			if wrMask = '1' then
-				maskRegister <= data;
-			end if;
-			if wrValue = '1' then
-				valueRegister <= data;
-			end if;
-		end if;
-	end process;
-
 end Behavioral;
 

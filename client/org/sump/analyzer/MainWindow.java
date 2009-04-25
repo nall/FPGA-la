@@ -27,28 +27,37 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
-import javax.swing.filechooser.FileFilter;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JToolBar;
+import javax.swing.filechooser.FileFilter;
+
+import org.sump.analyzer.tools.Tool;
 
 /**
  * Main frame and starter for Logic Analyzer Client.
  * <p>
  * This class only provides a simple end-user frontend and no functionality to be used by other code.
  * 
- * @version 0.3
+ * @version 0.7
  * @author Michael "Mr. Sump" Poppitz
  */
-public final class MainWindow extends WindowAdapter implements ActionListener, WindowListener {
+public final class MainWindow extends WindowAdapter implements ActionListener, WindowListener, StatusChangeListener {
 
 	/**
 	 * Creates a JMenu containing items as specified.
@@ -81,13 +90,23 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 	 */
 	private void createTools(JToolBar tools, String[] files, String[] descriptions) {
 		for (int i = 0; i < files.length; i++) {
-			JButton b = new JButton(new ImageIcon("org/sump/analyzer/icons/" + files[i], descriptions[i]));
+			URL u = MainWindow.class.getResource("icons/" + files[i]);
+			JButton b = new JButton(new ImageIcon(u, descriptions[i]));
 			b.setMargin(new Insets(0,0,0,0));
 			b.addActionListener(this);
 			tools.add(b);
 		}
 	}
 
+	/**
+	 * Enables or disables functions that can only operate when captured data has been added to the diagram.
+	 * @param enable set <code>true</code> to enable these functions, <code>false</code> to disable them
+	 */
+	private void enableDataDependingFunctions(boolean enable) {
+		diagramMenu.setEnabled(enable);
+		toolMenu.setEnabled(enable);
+	}
+	
 	/**
 	 * Inner class defining a File Filter for SLA files.
 	 * 
@@ -96,10 +115,25 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 	 */
 	private class SLAFilter extends FileFilter {
 		public boolean accept(File f) {
-			return (f.getName().toLowerCase().endsWith(".sla"));
+			return (f.isDirectory() || f.getName().toLowerCase().endsWith(".sla"));
 		}
 		public String getDescription() {
 			return ("Sump's Logic Analyzer Files (*.sla)");
+		}
+	}
+
+	/**
+	 * Inner class defining a File Filter for SLP files.
+	 * 
+	 * @author Michael "Mr. Sump" Poppitz
+	 *
+	 */
+	private class SLPFilter extends FileFilter {
+		public boolean accept(File f) {
+			return (f.isDirectory() || f.getName().toLowerCase().endsWith(".slp"));
+		}
+		public String getDescription() {
+			return ("Sump's Logic Analyzer Project Files (*.slp)");
 		}
 	}
 	
@@ -109,7 +143,8 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 	 */
 	public MainWindow() {
 		super();
-		
+		project = new Project();
+
 		frame = new JFrame("Logic Analyzer Client");
 		frame.setIconImage((new ImageIcon("org/sump/analyzer/icons/la.png")).getImage());
 		Container contentPane = frame.getContentPane();
@@ -122,16 +157,57 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 		JMenu fileMenu = createMenu("File", fileEntries);
 		mb.add(fileMenu);
 
+		// project menu
+		String[] projectEntries = {"Open Project...", "Save Project as...", };
+		JMenu projectMenu = createMenu("Project", projectEntries);
+		mb.add(projectMenu);
+
 		// device menu
 		String[] deviceEntries = {"Capture...", "Repeat Capture"};
 		JMenu deviceMenu = createMenu("Device", deviceEntries);
 		mb.add(deviceMenu);
 		
 		// diagram menu
-		String[] diagramEntries = {"Zoom in", "Zoom out", "Default Zoom"};
-		JMenu diagramMenu = createMenu("Diagram", diagramEntries);
+		String[] diagramEntries = {"Zoom In", "Zoom Out", "Default Zoom", "", "Diagram Settings...", "Labels..."};
+		diagramMenu = createMenu("Diagram", diagramEntries);
 		mb.add(diagramMenu);
-		
+
+		// tools menu
+		String[] toolClasses = { 	// TODO: should be read from properties
+				"org.sump.analyzer.tools.StateAnalysis",
+				"org.sump.analyzer.tools.SPIProtocolAnalysis"
+		};
+		List loadedTools = new LinkedList();
+		for (int i = 0; i < toolClasses.length; i++) {
+			try {
+				Class tool = Class.forName(toolClasses[i]);
+				Object o = tool.newInstance();
+				if (o instanceof Tool)
+					loadedTools.add(o);
+				if (o instanceof Configurable)
+					project.addConfigurable((Configurable)o);
+			} catch (Exception e) { e.printStackTrace(); }
+		}
+
+		tools = new Tool[loadedTools.size()];
+		Iterator test = loadedTools.iterator();
+		for (int i = 0; test.hasNext(); i++)
+			tools[i] = (Tool)test.next();
+
+		String[] toolEntries = new String[tools.length];
+		for (int i = 0; i < tools.length; i++) {
+			tools[i].init(frame);
+			toolEntries[i] = tools[i].getName();
+		}
+
+		toolMenu = createMenu("Tools", toolEntries);
+		mb.add(toolMenu);
+
+		// help menu
+		String[] helpEntries = {"About"};
+		JMenu helpMenu = createMenu("Help", helpEntries);
+		mb.add(helpMenu);
+
 		frame.setJMenuBar(mb);
 		
 		JToolBar tools = new JToolBar();
@@ -154,17 +230,27 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 		
 		contentPane.add(tools, BorderLayout.NORTH);
 		
+		status = new JLabel(" ");
+		contentPane.add(status, BorderLayout.SOUTH);
+		
 		diagram = new Diagram();
+		project.addConfigurable(diagram);
+		diagram.addStatusChangeListener(this);
 		contentPane.add(new JScrollPane(diagram), BorderLayout.CENTER);
 
-		frame.setSize(1000, 750);
-		frame.setVisible(true);
+		enableDataDependingFunctions(false);
+
+		frame.setSize(1000, 835);
 		frame.addWindowListener(this);
 
 		fileChooser = new JFileChooser();
 		fileChooser.addChoosableFileFilter((FileFilter) new SLAFilter());
 
+		projectChooser = new JFileChooser();
+		projectChooser.addChoosableFileFilter((FileFilter) new SLPFilter());
+		
 		controller = new DeviceController();
+		project.addConfigurable(controller);
 	}
 	
 	/**
@@ -183,10 +269,8 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 			if (label.equals("Open...")) {
 				if (fileChooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
 					File file = fileChooser.getSelectedFile();
-					if (file.isFile()) {
-						System.out.println("Opening: " + file.getName() + ".");
-						diagram.setCapturedData(new CapturedData(file));
-					}
+					if (file.isFile())
+						loadData(file);
 				}
 			
 			} else if (label.equals("Save as...")) {
@@ -195,14 +279,28 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 					System.out.println("Saving: " + file.getName() + ".");
 					diagram.getCapturedData().writeToFile(file);
 				}
+
+			} else if (label.equals("Open Project...")) {
+				if (projectChooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
+					File file = projectChooser.getSelectedFile();
+					if (file.isFile())
+						loadProject(file);
+				}
+				
+			} else if (label.equals("Save Project as...")) {
+				if (projectChooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
+					File file = projectChooser.getSelectedFile();
+					System.out.println("Saving Project: " + file.getName() + ".");
+					project.store(file);
+				}
 			
 			} else if (label.equals("Capture...")) {
-				if (controller.showCaptureDialog(frame) == DeviceController.DATA_READ) {
+				if (controller.showCaptureDialog(frame) == DeviceController.DONE) {
 					diagram.setCapturedData(controller.getDeviceData());
 				}
 
 			} else if (label.equals("Repeat Capture")) {
-				if (controller.showCaptureProgress(frame) == DeviceController.DATA_READ) {
+				if (controller.showCaptureProgress(frame) == DeviceController.DONE) {
 					diagram.setCapturedData(controller.getDeviceData());
 				}
 
@@ -214,12 +312,48 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 			
 			} else if (label.equals("Zoom Out")) {
 				diagram.zoomOut();
+
 			} else if (label.equals("Default Zoom")) {
 				diagram.zoomDefault();
+
+			} else if (label.equals("Diagram Settings...")) {
+				diagram.showSettingsDialog(frame);
+				
+			} else if (label.equals("Labels...")) {
+				diagram.showLabelsDialog(frame);
+
+			} else if (label.equals("About")) {
+				JOptionPane.showMessageDialog(null,
+						"Sump's Logic Analyzer Client\n"
+						+ "\n"
+						+ "Copyright 2006 Michael Poppitz\n"
+						+ "This software is released under the GNU GPL.\n"
+						+ "\n"
+						+ "For more information see:\n"
+						+ "http://www.sump.org/projects/analyzer/",
+					"About", JOptionPane.INFORMATION_MESSAGE
+				);
+			} else {
+				// check if a tool has been selected and if so, process captured data by tool
+				for (int i = 0; i < tools.length; i++)
+					if (label.equals(tools[i].getName())) {
+						CapturedData newData = tools[i].process(diagram.getCapturedData());
+						if (newData != null)
+							diagram.setCapturedData(newData);
+					}
 			}
+			enableDataDependingFunctions(diagram.hasCapturedData());
+				
 		} catch(Exception E) {
 			E.printStackTrace(System.out);
 		}
+	}
+
+	/** 
+	 * Handles status change requests.
+	 */
+	public void statusChanged(String s) {
+		status.setText(s);
 	}
 	
 	/**
@@ -228,13 +362,33 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 	public void windowClosing(WindowEvent event) {
 		exit();
 	}
+
+	/**
+	 * Load the given file as data.
+	 * @param file file to be loaded as data
+	 * @throws IOException when an IO error occurs
+	 */
+	public void loadData(File file) throws IOException {
+		System.out.println("Opening: " + file.getName());
+		diagram.setCapturedData(new CapturedData(file));
+	}
+	
+	/**
+	 * Load the given file as project.
+	 * @param file file to be loaded as projects
+	 * @throws IOException when an IO error occurs
+	 */
+	public void loadProject(File file) throws IOException {
+		System.out.println("Opening Project: " + file.getName());
+		project.load(file);
+	}
 	
 	/**
 	 * Home of the main thread.
 	 * Which happens to be a lazy one.
 	 */
-	// TODO: Check if it really needs to live as long as the program runs.
 	public void run() {
+		frame.setVisible(true);
 		thread = Thread.currentThread();
 		done = false;
 		while (!done) {
@@ -247,7 +401,7 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 	}
 	
 	/**
-	 * Tells the main thread to exit. This will stop stop the VM.
+	 * Tells the main thread to exit. This will stop the VM.
 	 */
 	public void exit() {
 		done = true;
@@ -258,19 +412,16 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 		}
 	}
 		
-	/**
-	 * Starts up the logic analyzer client.
-	 * @param args	no arguments are supported
-	 */
-	public static void main(String[] args) {
-		MainWindow w = new MainWindow();
-		w.run();
-		System.exit(0);
-	}
-
+	private JMenu toolMenu;
+	private JMenu diagramMenu;
+	
 	private JFileChooser fileChooser;
+	private JFileChooser projectChooser;
 	private DeviceController controller;
 	private Diagram diagram;
+	private Project project;
+	private JLabel status;
+	private Tool[] tools;
 	
 	private JFrame frame;
 	private Thread thread;

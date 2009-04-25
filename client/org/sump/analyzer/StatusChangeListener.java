@@ -22,7 +22,7 @@ package org.sump.analyzer;
  * Simple interface for a "event" mechanism that allows the diagram to update
  * the main windows status bar.
  * 
- * @version 0.5
+ * @version 0.7
  * @author Michael "Mr. Sump" Poppitz
  *
  */
