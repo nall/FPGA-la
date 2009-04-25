@@ -57,7 +57,7 @@ import org.sump.analyzer.tools.Tool;
  * @version 0.7
  * @author Michael "Mr. Sump" Poppitz
  */
-public final class MainWindow extends WindowAdapter implements ActionListener, WindowListener, StatusChangeListener {
+public final class MainWindow extends WindowAdapter implements Runnable, ActionListener, WindowListener, StatusChangeListener {
 
 	/**
 	 * Creates a JMenu containing items as specified.
@@ -138,12 +138,19 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 	}
 	
 	/**
-	 * Constructs and displays the main window.
+	 * Default constructor.
 	 *
 	 */
 	public MainWindow() {
 		super();
 		project = new Project();
+	}
+	
+	/**
+	 * Creates the GUI.
+	 *
+	 */
+	void createGUI() {
 
 		frame = new JFrame("Logic Analyzer Client");
 		frame.setIconImage((new ImageIcon("org/sump/analyzer/icons/la.png")).getImage());
@@ -175,7 +182,8 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 		// tools menu
 		String[] toolClasses = { 	// TODO: should be read from properties
 				"org.sump.analyzer.tools.StateAnalysis",
-				"org.sump.analyzer.tools.SPIProtocolAnalysis"
+				"org.sump.analyzer.tools.SPIProtocolAnalysis",
+				"org.sump.analyzer.tools.I2CProtocolAnalysis"
 		};
 		List loadedTools = new LinkedList();
 		for (int i = 0; i < toolClasses.length; i++) {
@@ -242,6 +250,7 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 
 		frame.setSize(1000, 835);
 		frame.addWindowListener(this);
+		frame.setVisible(true);
 
 		fileChooser = new JFileChooser();
 		fileChooser.addChoosableFileFilter((FileFilter) new SLAFilter());
@@ -251,6 +260,7 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 		
 		controller = new DeviceController();
 		project.addConfigurable(controller);
+
 	}
 	
 	/**
@@ -384,32 +394,18 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 	}
 	
 	/**
-	 * Home of the main thread.
-	 * Which happens to be a lazy one.
+	 * Starts GUI creation and displays it.
+	 * Must be called be Swing event dispatcher thread.
 	 */
 	public void run() {
-		frame.setVisible(true);
-		thread = Thread.currentThread();
-		done = false;
-		while (!done) {
-			try {
-				Thread.sleep(1000);
-			} catch (Exception E) {
-				// ignore 
-			}
-		}
+		createGUI();
 	}
 	
 	/**
 	 * Tells the main thread to exit. This will stop the VM.
 	 */
 	public void exit() {
-		done = true;
-		if (thread != null) {
-			thread.interrupt();
-		} else {
-			// bummer
-		}
+		System.exit(0);
 	}
 		
 	private JMenu toolMenu;
@@ -424,6 +420,4 @@ public final class MainWindow extends WindowAdapter implements ActionListener, W
 	private Tool[] tools;
 	
 	private JFrame frame;
-	private Thread thread;
-	private boolean done; 
 }

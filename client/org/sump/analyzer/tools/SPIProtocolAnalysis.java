@@ -17,13 +17,12 @@
  *
  */
 package org.sump.analyzer.tools;
-
-import java.awt.BorderLayout;
+  
 import java.awt.Container;
-import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -95,16 +94,16 @@ public class SPIProtocolAnalysis extends Base implements Tool, Configurable {
 	 * The Dialog Class
 	 * @author Frank Kunz
 	 *
-	 * The dialog class draws the basic dialog with a border layout. The dialog
-	 * consists of three main parts. A settings panel (WEST), a table panel (CENTER)
-	 * and a button panel (SOUTH).
+	 * The dialog class draws the basic dialog with a grid layout. The dialog
+	 * consists of three main parts. A settings panel, a table panel
+	 * and three buttons.
 	 */
 	private class SPIProtocolAnalysisDialog extends JDialog implements ActionListener {
 		public SPIProtocolAnalysisDialog(Frame frame, String name) {
 			super(frame, name, true);
 			Container pane = getContentPane();
-			pane.setLayout(new BorderLayout());
-			getRootPane().setBorder(BorderFactory.createLineBorder(getBackground(), 5));
+			pane.setLayout(new GridBagLayout());
+			getRootPane().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
 			decodedData = new Vector();
 			startOfDecode = 0;
@@ -113,55 +112,62 @@ public class SPIProtocolAnalysis extends Base implements Tool, Configurable {
 			 * add protocol settings elements
 			 */
 			JPanel panSettings = new JPanel();
-			panSettings.setLayout(new GridBagLayout());
+			panSettings.setLayout(new GridLayout(7,2,5,5));
+			panSettings.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createTitledBorder("Settings"),
+					BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 			
 			String channels[] = new String[32];
 			for (int i = 0; i < 32; i++)
 				channels[i] = new String("Channel " + i);
 
-			panSettings.add(new JLabel("SCK"), createConstraints(0, 0, 1, 1, 0, 0));
+			panSettings.add(new JLabel("SCK"));
 			sck = new JComboBox(channels);
-			panSettings.add(sck, createConstraints(1, 0, 1, 1, 0, 0));
+			panSettings.add(sck);
 			
-			panSettings.add(new JLabel("MISO"), createConstraints(0, 1, 1, 1, 0, 0));
+			panSettings.add(new JLabel("MISO"));
 			miso = new JComboBox(channels);
-			panSettings.add(miso, createConstraints(1, 1, 1, 1, 0, 0));
+			panSettings.add(miso);
 			
-			panSettings.add(new JLabel("MOSI"), createConstraints(0, 2, 1, 1, 0, 0));
+			panSettings.add(new JLabel("MOSI"));
 			mosi = new JComboBox(channels);
-			panSettings.add(mosi, createConstraints(1, 2, 1, 1, 0, 0));
+			panSettings.add(mosi);
 
-			panSettings.add(new JLabel("/CS"), createConstraints(0, 3, 1, 1, 0, 0));
+			panSettings.add(new JLabel("/CS"));
 			cs = new JComboBox(channels);
-			panSettings.add(cs, createConstraints(1, 3, 1, 1, 0, 0));
+			panSettings.add(cs);
 
-			panSettings.add(new JLabel("Mode"), createConstraints(0, 4, 1, 1, 0, 0));
+			panSettings.add(new JLabel("Mode"));
 			modearray = new String[4];
 			for (int i = 0; i < modearray.length; i++)
 				modearray[i] = new String("" + i);
 			mode = new JComboBox(modearray);
-			panSettings.add(mode, createConstraints(1, 4, 1, 1, 0, 0));
+			panSettings.add(mode);
 			
-			panSettings.add(new JLabel("Bits"), createConstraints(0, 5, 1, 1, 0, 0));
+			panSettings.add(new JLabel("Bits"));
 			bitarray = new String[13];
 			for (int i = 0; i < bitarray.length; i++)
 				bitarray[i] = new String("" + (i+4));
 			bits = new JComboBox(bitarray);
 			bits.setSelectedItem("8");
-			panSettings.add(bits, createConstraints(1, 5, 1, 1, 0, 0));
+			panSettings.add(bits);
 
-			panSettings.add(new JLabel("Order"), createConstraints(0, 6, 1, 1, 0, 0));
+			panSettings.add(new JLabel("Order"));
 			orderarray = new String[2];
 			orderarray[0] = new String("MSB first");
 			orderarray[1] = new String("LSB first");
 			order = new JComboBox(orderarray);
-			panSettings.add(order, createConstraints(1, 6, 1, 1, 0, 0));
-			pane.add(panSettings, BorderLayout.WEST);
+			panSettings.add(order);
+			pane.add(panSettings, createConstraints(0, 0, 1, 1, 0, 0));
 			
 			/*
 			 * add an empty output view
 			 */
 			JPanel panTable = new JPanel();
+			panTable.setLayout(new GridLayout(1, 1, 5, 5));
+			panTable.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createTitledBorder("Results"),
+					BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 			String colData[][] = new String[1][4];
 			colData[0][0] = new String();
 			colData[0][1] = new String();
@@ -169,23 +175,20 @@ public class SPIProtocolAnalysis extends Base implements Tool, Configurable {
 			colData[0][3] = new String();
 			outTable = new JTable(colData, colNames);
 			panTable.add(new JScrollPane(outTable));
-			pane.add(panTable, BorderLayout.CENTER);
+			add(panTable, createConstraints(1, 0, 3, 3, 1.0, 1.0));
 			
 			/*
 			 * add buttons
 			 */
-			JPanel panButtons = new JPanel();
-			panButtons.setLayout(new FlowLayout());
 			JButton convert = new JButton("Analyze");
 			convert.addActionListener(this);
-			panButtons.add(convert);
-			JButton cancel = new JButton("Close");
-			cancel.addActionListener(this);
-			panButtons.add(cancel);
+			add(convert, createConstraints(0, 3, 1, 1, 0.5, 0));
 			JButton export = new JButton("Export");
 			export.addActionListener(this);
-			panButtons.add(export);
-			pane.add(panButtons, BorderLayout.SOUTH);
+			add(export, createConstraints(1, 3, 1, 1, 0.5, 0));
+			JButton cancel = new JButton("Close");
+			cancel.addActionListener(this);
+			add(cancel, createConstraints(2, 3, 1, 1, 0.5, 0));
 			
 			fileChooser = new JFileChooser();
 			fileChooser.addChoosableFileFilter((FileFilter) new CSVFilter());
@@ -508,6 +511,9 @@ public class SPIProtocolAnalysis extends Base implements Tool, Configurable {
 		private Vector decodedData;
 		private JFileChooser fileChooser;
 		private int startOfDecode;
+		
+		private static final long serialVersionUID = 1L;
+
 	}
 	
 	/**

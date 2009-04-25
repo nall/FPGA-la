@@ -20,6 +20,8 @@ package org.sump.analyzer;
 
 import java.io.File;
 
+import javax.swing.SwingUtilities;
+
 /**
  * Loader for the Logic Analyzer Client.
  * <p>
@@ -88,7 +90,12 @@ public class Loader {
 			}
 		}
 		
-		w.run();
-		System.exit(0);
+		try {
+			SwingUtilities.invokeAndWait(w);
+		} catch (Exception e) {
+			System.out.println("Error while invoking application: " + e.getMessage() + "\n");
+			e.printStackTrace();
+			System.exit(-1);
+		}
 	}
 }

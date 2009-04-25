@@ -38,7 +38,8 @@
 -- time needed between two dependend trigger stage matches, because the
 -- dependence is evaluated in the last pipeline step.
 -- It does however increase the delay for the capturing process, but this
--- can easily be software compensated. (By adjusting the before/after ratio.)
+-- can easily be compensated by software.
+-- (By adjusting the before/after ratio.)
 ----------------------------------------------------------------------------------
 
 library IEEE;
