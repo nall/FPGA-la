@@ -41,32 +41,19 @@ use UNISIM.VComponents.all;
 
 entity la is
 	Port(
-	   resetSwitch : in std_logic;
+	    resetSwitch : in std_logic;
 		xtalClock : in std_logic;
 
 		exClock : in std_logic;
 		input : in std_logic_vector(31 downto 0);
-		ready50 : out std_logic;
+		
 
 		rx : in std_logic;
 		tx : inout std_logic;
 
-		an : OUT std_logic_vector(3 downto 0);
-		segment : OUT std_logic_vector(7 downto 0);
 		led : OUT std_logic_vector(7 downto 0);
-		switch : in std_logic_vector(1 downto 0);
+		switch : in std_logic_vector(1 downto 0)
 
-		ramIO1 : INOUT std_logic_vector(15 downto 0);
-		ramIO2 : INOUT std_logic_vector(15 downto 0);      
-		ramA : OUT std_logic_vector(17 downto 0);
-		ramWE : OUT std_logic;
-		ramOE : OUT std_logic;
-		ramCE1 : OUT std_logic;
-		ramUB1 : OUT std_logic;
-		ramLB1 : OUT std_logic;
-		ramCE2 : OUT std_logic;
-		ramUB2 : OUT std_logic;
-		ramLB2 : OUT std_logic
 	);
 end la;
 
@@ -76,15 +63,6 @@ architecture Behavioral of la is
 	PORT(
 		clkin : in  STD_LOGIC;
 		clk0 : out std_logic
-		);
-	END COMPONENT;
-	
-	COMPONENT display
-	PORT(
-		data : IN std_logic_vector(31 downto 0);
-		clock : IN std_logic;          
-		an : OUT std_logic_vector(3 downto 0);
-		segment : OUT std_logic_vector(7 downto 0)
 		);
 	END COMPONENT;
 
@@ -127,51 +105,49 @@ architecture Behavioral of la is
 		);
 	END COMPONENT;
 	
-	COMPONENT sram
+	COMPONENT sram_bram
 	PORT(
 		clock : IN std_logic;
 		input : IN std_logic_vector(31 downto 0);
 		output : OUT std_logic_vector(31 downto 0);
 		read : IN std_logic;
-		write : IN std_logic;    
-		ramIO1 : INOUT std_logic_vector(15 downto 0);
-		ramIO2 : INOUT std_logic_vector(15 downto 0);      
-		ramA : OUT std_logic_vector(17 downto 0);
-		ramWE : OUT std_logic;
-		ramOE : OUT std_logic;
-		ramCE1 : OUT std_logic;
-		ramUB1 : OUT std_logic;
-		ramLB1 : OUT std_logic;
-		ramCE2 : OUT std_logic;
-		ramUB2 : OUT std_logic;
-		ramLB2 : OUT std_logic
+		write : IN std_logic   
 		);
 	END COMPONENT;
 	
+	
 signal cmd : std_logic_vector (39 downto 0);
 signal memoryIn, memoryOut : std_logic_vector (31 downto 0);
+signal probeInput : std_logic_vector (31 downto 0);
 signal output : std_logic_vector (31 downto 0);
 signal clock : std_logic;
 signal read, write, execute, send, busy : std_logic;
+
+signal test_counter : std_logic_vector (40 downto 0);
 
 constant FREQ : integer := 100000000;				-- limited to 100M by onboard SRAM
 constant TRXSCALE : integer := 28; 					-- 100M / 28 / 115200 = 31 (5bit)
 constant RATE : integer := 115200;					-- maximum & base rate
 
 begin
-	led(7 downto 0) <= exClock & "00" & switch & "000";
-
+	led(7 downto 0) <= exClock & resetSwitch & "0" & switch & "0" & rx & tx; --& "000";
+	
+	-- test counter
+	process(clock)
+	begin
+		if rising_edge(clock) then
+		   test_counter <= test_counter + 1;
+		end if;
+	end process;
+	
+	probeInput <= input;
+	-- probeInput <= test_counter(40 downto 9); -- use this to connect a counter to the inputs
+	
 	Inst_clockman: clockman PORT MAP(
 		clkin => xtalClock,
 		clk0 => clock
 	);
 
-	Inst_display: display PORT MAP(
-		data => memoryIn,
-		clock => clock,
-		an => an,
-		segment => segment
-	);
 
 	Inst_eia232: eia232
 	generic map (
@@ -197,9 +173,9 @@ begin
 		extReset => resetSwitch,
 		cmd => cmd,
 		execute => execute,
-		input => input,
+		input => probeInput,
 		inputClock => exClock,
-		sampleReady50 => ready50,
+		--sampleReady50 => ready50,
 		output => output,
 		outputSend => send,
 		outputBusy => busy,
@@ -209,23 +185,14 @@ begin
 		memoryWrite => write
 	);
 
-	Inst_sram: sram PORT MAP(
+	Inst_sram: sram_bram PORT MAP(
 		clock => clock,
 		input => memoryOut,
 		output => memoryIn,
 		read => read,
-		write => write,
-		ramA => ramA,
-		ramWE => ramWE,
-		ramOE => ramOE,
-		ramIO1 => ramIO1,
-		ramCE1 => ramCE1,
-		ramUB1 => ramUB1,
-		ramLB1 => ramLB1,
-		ramIO2 => ramIO2,
-		ramCE2 => ramCE2,
-		ramUB2 => ramUB2,
-		ramLB2 => ramLB2 
+		write => write 
 	);
+	
+
 end Behavioral;
 

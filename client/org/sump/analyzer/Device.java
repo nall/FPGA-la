@@ -77,7 +77,9 @@ public class Device extends Object {
 	private final static int FLAG_DISABLE_G3 = 0x00000020;	// disable channel group 3
 	private final static int FLAG_EXTERNAL = 0x00000040;	// disable channel group 3
 	private final static int FLAG_INVERTED = 0x00000080;	// disable channel group 3
-
+	
+	private final static int FLAG_RLE = 0x00000100;	// run length encoding
+	
 	private final static int TRIGGER_DELAYMASK = 0x0000ffff;// mask for delay value
 	private final static int TRIGGER_LEVELMASK = 0x00030000;// mask for level value
 	private final static int TRIGGER_CHANNELMASK = 0x01f00000;// mask for level value
@@ -237,6 +239,14 @@ public class Device extends Object {
 	}
 	
 	/**
+	 * Sets wheter or not to enable the run length encoding.
+	 * @param enable <code>true</code> enables the RLE, <code>false</code> disables it.
+	 */
+	public void setRleEnabled(boolean enable) {
+		rleEnabled = enable;
+	}
+	
+	/**
 	 * Set enabled channels.
 	 * @param mask bit map defining enabled channels
 	 */
@@ -321,6 +331,14 @@ public class Device extends Object {
 		return (!demux && clockSource == CLOCK_INTERNAL);
 	}
 
+	/**
+	 * Returns wether or not the run length encoding is enabled.
+	 * @return <code>true</code> when run length encoding is enabled, <code>false</code> otherwise
+	 */
+	public boolean isRleEnabled() {
+		return (rleEnabled);
+	}
+	
 	/**
 	 * Returns the number of available trigger stages.
 	 * @return number of available trigger stages
@@ -628,10 +646,11 @@ public class Device extends Object {
 					flags |= FLAG_DISABLE_G0 << i;
 			sendCommand(SETSIZE, (((effectiveStopCounter - 4) & 0x3fffc) << 14) | (((readCounter & 0x3fffc) >> 2) - 1));
 		}
+		if (rleEnabled) { flags |= FLAG_RLE; }
 		System.out.println("Flags: " + Integer.toString(flags, 2));
 		sendCommand(SETFLAGS, flags);
 		sendCommand(RUN);
-
+		
 		// check if data needs to be multiplexed
 		int channels;
 		int samples;
@@ -668,14 +687,57 @@ public class Device extends Object {
 			percentageDone = -1;
 		}
 		
+		int rleTrigPos = 0;
+		if (rleEnabled) {
+			System.out.println("Run Length decode, samples: "+ 
+					Integer.toString(samples));
+			java.util.ArrayList<Integer> decodedBuffer = new java.util.ArrayList<Integer>();
+			decodedBuffer.clear();
+			
+			// DELAY only works on "changes", i.e. it is rounded...
+			for (int i = 0; i < samples; i++) {
+				if ((buffer[i] & 0x80000000) != 0) {
+					// This is a "count"
+					// If it is the first sample, skip it.
+					if (i==0) {
+						continue;
+					}
+					int count = 0x7FFFFFFF & buffer[i];
+
+					//System.out.println("RLE count: 0x"+ 
+					//		Integer.toString(count,16));
+					for (int j = 0; j < count; j++) {
+						decodedBuffer.add(buffer[i-1]);
+					}
+				} else {
+					if ((i>=stopCounter-2) && (rleTrigPos == 0)){
+						rleTrigPos = decodedBuffer.size();
+					}
+					//System.out.println("RLE value: 0x"+ 
+					//		Integer.toString(buffer[i],16));
+					decodedBuffer.add(buffer[i]);
+				}
+			}
+			
+			buffer = new int[decodedBuffer.size()];
+			for (int i = 0; i < decodedBuffer.size(); i++)
+				buffer[i] = decodedBuffer.get(i);
+			//System.out.println("Decoded: "+ Integer.toString(decodedBuffer.size()));
+		}
+		
 		// collect additional information for CapturedData
 		int pos = CapturedData.NOT_AVAILABLE;
 		if (triggerEnabled)
-			pos = readCounter - stopCounter - 3 - (4 / (divider + 1)) - (demux ? 5 : 0);
+			if (!rleEnabled) {
+				pos = readCounter - stopCounter - 3 - (4 / (divider + 1)) - (demux ? 5 : 0);
+			}else{
+				pos = rleTrigPos - 1 ;
+			}
 		int rate = CapturedData.NOT_AVAILABLE;
 		if (clockSource == CLOCK_INTERNAL)
 			rate = demux ? 2*CLOCK / (divider + 1) : CLOCK / (divider + 1);
 
+		System.out.println("RATE: "+ Integer.toString(rate));
 		return (new CapturedData(buffer, pos, rate, channels, enabledChannels));
 	}
 	
@@ -707,4 +769,6 @@ public class Device extends Object {
 	private int divider;
 	private int size;
 	private double ratio;
+	
+	private boolean rleEnabled;
 }

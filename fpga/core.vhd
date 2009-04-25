@@ -52,7 +52,8 @@ entity core is
            memoryIn : in  STD_LOGIC_VECTOR (31 downto 0);
            memoryOut : out  STD_LOGIC_VECTOR (31 downto 0);
            memoryRead : out  STD_LOGIC;
-           memoryWrite : out  STD_LOGIC);
+           memoryWrite : out  STD_LOGIC
+			 );
 end core;
 
 architecture Behavioral of core is
@@ -74,13 +75,14 @@ architecture Behavioral of core is
 
 	COMPONENT flags
 	PORT(
-		data : IN std_logic_vector(7 downto 0);
+		data : IN std_logic_vector(8 downto 0);
 		clock : IN std_logic;
 		write : IN std_logic;          
 		demux : OUT std_logic;
 	   filter : OUT std_logic;
 		external : out std_logic;
-		inverted : out std_logic
+		inverted : out std_logic;
+		rle : out std_logic
 	);
 	END COMPONENT;
 	
@@ -143,11 +145,23 @@ architecture Behavioral of core is
 		memoryWrite : out  STD_LOGIC
 	);
 	END COMPONENT;
+	
+	COMPONENT rle_enc
+	PORT(
+		clock : IN std_logic;
+		reset : IN std_logic;
+		dataIn : IN std_logic_vector(31 downto 0);
+		validIn : IN std_logic;
+		enable : IN std_logic;
+		dataOut : OUT std_logic_vector(31 downto 0);
+		validOut : OUT std_logic
+		);
+	END COMPONENT;
 
 signal opcode : std_logic_vector (7 downto 0);
-signal data : std_logic_vector (31 downto 0);
+signal data, rleOut : std_logic_vector (31 downto 0);
 signal sample, syncedInput : std_logic_vector (31 downto 0);
-signal sampleClock, run, reset : std_logic;
+signal sampleClock, run, reset, rleValid, rleEnable : std_logic;
 signal wrtrigmask, wrtrigval, wrtrigcfg : std_logic_vector(3 downto 0);
 signal wrDivider, wrsize, arm, resetCmd: std_logic;
 signal flagDemux, flagFilter, flagExternal, flagInverted, wrFlags, sampleReady: std_logic;
@@ -181,13 +195,14 @@ begin
 	);
 
 	Inst_flags: flags PORT MAP(
-		data => data(7 downto 0),
+		data => data(8 downto 0),
 		clock => clock,
 		write => wrFlags,
 		demux => flagDemux,
 		filter => flagFilter,
 		external => flagExternal,
-		inverted => flagInverted
+		inverted => flagInverted,
+		rle => rleEnable
 	);
 	
 	Inst_sync: sync PORT MAP(
@@ -228,8 +243,8 @@ begin
 	Inst_controller: controller PORT MAP(
 		clock => clock,
 		reset => reset,
-		input => sample,
-		inputReady => sampleReady,
+		input => rleOut,
+		inputReady => rleValid,
 		data => data,
 		wrSize => wrsize,
 		run => run,
@@ -240,6 +255,16 @@ begin
 		memoryOut => memoryOut,
 		memoryRead => memoryRead,
 		memoryWrite => memoryWrite
+	);
+	
+	Inst_rle_enc: rle_enc PORT MAP(
+		clock => clock,
+		reset => reset,
+		dataIn => sample,
+		validIn => sampleReady,
+		enable => rleEnable,
+		dataOut => rleOut,
+		validOut => rleValid
 	);
 
 end Behavioral;

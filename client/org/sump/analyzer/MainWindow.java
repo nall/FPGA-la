@@ -248,7 +248,7 @@ public final class MainWindow extends WindowAdapter implements Runnable, ActionL
 
 		enableDataDependingFunctions(false);
 
-		frame.setSize(1000, 835);
+		frame.setSize(1000, 700);
 		frame.addWindowListener(this);
 		frame.setVisible(true);
 

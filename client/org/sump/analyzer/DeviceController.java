@@ -116,7 +116,7 @@ public class DeviceController extends JComponent implements ActionListener, Runn
 
 		// connection pane
 		JPanel connectionPane = new JPanel();
-		connectionPane.setLayout(new GridLayout(2, 2, 5, 5));
+		connectionPane.setLayout(new GridLayout(6, 2, 5, 5));
 		connectionPane.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createTitledBorder("Connection Settings"),
 				BorderFactory.createEmptyBorder(5, 5, 5, 5)
@@ -135,11 +135,15 @@ public class DeviceController extends JComponent implements ActionListener, Runn
 		connectionPane.add(new JLabel("Port Speed (SW1,SW0):"));
 		connectionPane.add(portRateSelect);
 
+		connectionPane.add(new JLabel());connectionPane.add(new JLabel());
+		connectionPane.add(new JLabel());connectionPane.add(new JLabel());
+		connectionPane.add(new JLabel());connectionPane.add(new JLabel());
+		
 		add(connectionPane, createConstraints(0, 0, 1, 1, 1.0, 0.5));
 		
 		// settings pane
 		JPanel settingsPane = new JPanel();
-		settingsPane.setLayout(new GridLayout(5, 2, 5, 5));
+		settingsPane.setLayout(new GridLayout(6, 2, 5, 5));
 		settingsPane.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createTitledBorder("Analyzer Settings"),
 				BorderFactory.createEmptyBorder(5, 5, 5, 5)
@@ -187,13 +191,20 @@ public class DeviceController extends JComponent implements ActionListener, Runn
 		settingsPane.add(new JLabel("Recording Size:"));
 		settingsPane.add(sizeSelect);
 
-		add(settingsPane, createConstraints(0, 1, 1, 1, 1.0, 0.5));
+		add(settingsPane, createConstraints(1, 0, 1, 1, 1.0, 0.5));
 
 		filterEnable = new JCheckBox("Enable");
 		filterEnable.setSelected(true);
 		filterEnable.setEnabled(false);
 		settingsPane.add(new JLabel("Noise Filter: "));
 		settingsPane.add(filterEnable);
+		
+
+		rleEnable = new JCheckBox("Enable");
+		rleEnable.setSelected(false);
+		rleEnable.setEnabled(true);
+		settingsPane.add(new JLabel("RLE: "));
+		settingsPane.add(rleEnable);
 
 		// trigger pane
 		JPanel triggerPane = new JPanel();
@@ -270,7 +281,7 @@ public class DeviceController extends JComponent implements ActionListener, Runn
 			triggerStageTabs.add("Stage " + i, stagePane);
 		}
 		triggerPane.add(triggerStageTabs, createConstraints(0, 4, 3, 1, 1.0, 1.0));
-		add(triggerPane, createConstraints(1, 0, 2, 2, 1.0, 0.5));
+		add(triggerPane, createConstraints(0, 2, 3, 2, 1.0, 0.5));
 		
 		// progress pane
 		JPanel progressPane = new JPanel();
@@ -281,17 +292,17 @@ public class DeviceController extends JComponent implements ActionListener, Runn
 		));
 		progress = new JProgressBar(0, 100);
 		progressPane.add(progress, BorderLayout.CENTER);
-		add(progressPane, createConstraints(0, 2, 3, 1, 1.0, 0));
+		add(progressPane, createConstraints(0, 4, 3, 1, 1.0, 0));
 
-		add(new JLabel(), createConstraints(0, 3, 1, 1, 0.5, 0));
+		add(new JLabel(), createConstraints(0, 5, 1, 1, 0.5, 0));
 		
 		captureButton = new JButton("Capture");
 		captureButton.addActionListener(this);
-		add(captureButton, createConstraints(1, 3, 1, 1, 0.5, 0));
+		add(captureButton, createConstraints(1, 5, 1, 1, 0.5, 0));
 
 		JButton cancel = new JButton("Close");
 		cancel.addActionListener(this);
-		add(cancel, createConstraints(2, 3, 1, 1, 0.5, 0));
+		add(cancel, createConstraints(2, 5, 1, 1, 0.5, 0));
 		
 		capturedData = null;
 		timer = null;
@@ -456,6 +467,7 @@ public class DeviceController extends JComponent implements ActionListener, Runn
 		
 		// set filter
 		device.setFilterEnabled(filterEnable.isSelected());
+		device.setRleEnabled(rleEnable.isSelected());
 
 		// set trigger
 		boolean triggerEnabled = triggerEnable.isSelected();
@@ -749,6 +761,7 @@ public class DeviceController extends JComponent implements ActionListener, Runn
 	private JComboBox sizeSelect;
 	private JComboBox ratioSelect;
 	private JCheckBox filterEnable;
+	private JCheckBox rleEnable;
 	private JCheckBox triggerEnable;
 	private JComboBox triggerTypeSelect;
 	private JTabbedPane triggerStageTabs;

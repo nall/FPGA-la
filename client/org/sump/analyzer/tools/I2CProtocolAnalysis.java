@@ -641,7 +641,7 @@ public class I2CProtocolAnalysis extends Base implements Tool, Configurable {
 			if(analysisData.hasTimingData()) {
 				float time = (float)(count * (1.0 / analysisData.rate));
 				if(time < 1.0e-6) 			{return(Math.rint(time*1.0e9*100)/100 + "ns");}
-				else if(time < 1.0e-3) 		{return(Math.rint(time*1.0e6*100)/100 + "Âµs");}
+				else if(time < 1.0e-3) 		{return(Math.rint(time*1.0e6*100)/100 + "µs");}
 				else if(time < 1.0) 		{return(Math.rint(time*1.0e3*100)/100 + "ms");}
 				else 						{return(Math.rint(time*100)/100 + "s");}
 			} else {

@@ -119,7 +119,7 @@ public class Diagram extends JComponent implements MouseMotionListener, Configur
 			unitFactor = 1;
 			unitName = "s";
 			if (step <= 0.000001) { unitFactor = 1000000000; unitName = "ns"; } 
-			else if (step <= 0.001) { unitFactor = 1000000; unitName = "Âµs"; } 
+			else if (step <= 0.001) { unitFactor = 1000000; unitName = "µs"; } 
 			else if (step <= 1) { unitFactor = 1000; unitName = "ms"; } 
 		} else {
 			unitFactor = 1;

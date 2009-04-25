@@ -93,8 +93,7 @@ public class Loader {
 		try {
 			SwingUtilities.invokeAndWait(w);
 		} catch (Exception e) {
-			System.out.println("Error while invoking application: " + e.getMessage() + "\n");
-			e.printStackTrace();
+			System.out.println("Error while invoking application: " + e.getMessage());
 			System.exit(-1);
 		}
 	}

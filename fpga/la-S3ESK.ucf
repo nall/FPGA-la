@@ -1,0 +1,102 @@
+##################################################################################
+## la.ucf
+##
+## Author: Michael "Mr. Sump" Poppitz
+##
+## Details: http://sump.org/projects/analyzer/
+##
+## Contains assignment and iostandard information for
+## all used pins as well as timing and area constraints.
+##
+## MODIFIED for use of Xilinx Spartan 3e Starter Kit
+##################################################################################
+
+# an (decimal points?) - removed
+
+# Crystal Clock - use 50MHz onboard oscillator
+NET "xtalClock" LOC = "C9" | IOSTANDARD = LVCMOS33 ;
+# Define clock period for 50 MHz oscillator (40%/60% duty-cycle)
+NET "xtalClock" PERIOD = 20.0ns HIGH 40%;
+# external Clock - use Auxiliary clock
+NET "exClock"  LOC = "B8" | IOSTANDARD = LVCMOS33 ;
+
+# Capture inputs - use FX2 Connector (except those shared with the LED)
+# These four connections are shared with the J1 6-pin accessory header
+NET "input<0>" LOC = "B4" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<1>" LOC = "A4" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<2>" LOC = "D5" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<3>" LOC = "C5" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+# These four connections are shared with the J2 6-pin accessory header
+NET "input<4>" LOC = "A6" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<5>" LOC = "B6" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<6>" LOC = "E7" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<7>" LOC = "F7" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+# These four connections are shared with the J4 6-pin accessory header
+NET "input<8>" LOC = "D7" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<9>" LOC = "C7" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<10>" LOC = "F8" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<11>" LOC = "E8" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+# The discrete LEDs are shared with the following 8 FX2 connections
+#NET "FX2_IO<13>" LOC = "F9" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+#NET "FX2_IO<14>" LOC = "E9" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+#NET "FX2_IO<15>" LOC = "D11" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+#NET "FX2_IO<16>" LOC = "C11" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+#NET "FX2_IO<17>" LOC = "F11" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+#NET "FX2_IO<18>" LOC = "E11" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+#NET "FX2_IO<19>" LOC = "E12" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+#NET "FX2_IO<20>" LOC = "F12" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<12>" LOC = "A13" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<13>" LOC = "B13" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<14>" LOC = "A14" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<15>" LOC = "B14" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<16>" LOC = "C14" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<17>" LOC = "D14" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<18>" LOC = "A16" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<19>" LOC = "B16" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<20>" LOC = "E13" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<21>" LOC = "C4" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<22>" LOC = "B11" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<23>" LOC = "A11" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<24>" LOC = "A8" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<25>" LOC = "G9" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<26>" LOC = "D12" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<27>" LOC = "C12" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<28>" LOC = "A15" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<29>" LOC = "B15" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<30>" LOC = "C3" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+NET "input<31>" LOC = "C15" | IOSTANDARD = LVCMOS33 | SLEW = FAST | DRIVE = 8 ;
+
+# ready50 (next sample ready) - removed
+
+# LED - use LED<7:0>
+NET "led<0>"  LOC = "f12" | IOSTANDARD = LVTTL ;
+NET "led<1>"  LOC = "e12" | IOSTANDARD = LVTTL ;
+NET "led<2>"  LOC = "e11" | IOSTANDARD = LVTTL ;
+NET "led<3>"  LOC = "f11" | IOSTANDARD = LVTTL ;
+NET "led<4>"  LOC = "c11" | IOSTANDARD = LVTTL ;
+NET "led<5>"  LOC = "d11" | IOSTANDARD = LVTTL ;
+NET "led<6>"  LOC = "e9" | IOSTANDARD = LVTTL ;
+NET "led<7>"  LOC = "f9" | IOSTANDARD = LVTTL ;
+# RESET - use BTN_SOUTH
+NET "resetSwitch"  LOC = "k17" | IOSTANDARD = LVTTL | PULLDOWN ;
+# SWITCH - use SW0 and SW1
+NET "switch<0>" LOC = "L13" | IOSTANDARD = LVTTL | PULLUP ;
+NET "switch<1>" LOC = "L14" | IOSTANDARD = LVTTL | PULLUP ;
+
+## RS232 - use DCE port
+NET "rx"  LOC = "r7" | IOSTANDARD = LVTTL ;
+NET "tx"  LOC = "m14" | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = SLOW ;
+
+
+NET "xtalClock" TNM_NET = "xtalClock";
+TIMESPEC "TS_xtalClock" = PERIOD "xtalClock" 20 ns HIGH 50 %;
+
+# ignore paths resulting from flags as those will
+# not change during time critical operations
+NET "Inst_core/Inst_flags/demux" TIG;
+NET "Inst_core/Inst_flags/filter" TIG;
+NET "Inst_core/Inst_flags/inverted" TIG;
+NET "Inst_core/Inst_flags/external" TIG;
+
+#INST "Inst_sync/*" AREA_GROUP = "in";
+#AREA_GROUP "in" COMPRESSION = 1;
