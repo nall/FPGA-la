@@ -26,7 +26,7 @@ VHDL_SRC = BRAM8k32bit.vhd \
       eia232.vhd \
       filter.vhd \
       flags.vhd \
-      la.vhd \
+      la-$(BOARD_NAME).vhd \
       prescaler.vhd \
       receiver.vhd \
       rle_enc.vhd \
@@ -50,6 +50,7 @@ xflow: project
 	@cp ucf/$(BOARD_NAME).ucf $(WORK)/$(TOP_MODULE).ucf
 	@for i in $(VHDL_SRC); do ln -sf src/$$i .; done
 	@for i in $(VLOG_SRC); do ln -sf src/$$i .; done
+	@ln -s la-$(BOARD_NAME).vhd la.vhd
 	xflow -wd $(WORK) -p $(PART) -synth $(SYNTH) -implement $(IMPLEMENT) -config bitgen $(TOP_MODULE) 
 
 project:
@@ -72,4 +73,4 @@ svf: xflow
 	@impact -batch impactrc
 
 clean:
-	rm -rf $(WORK) $(VHDL_SRC) $(VLOG_SRC) $(TOP_MODULE).prj impactrc _impactbatch.log $(BOARD_NAME).svf
+	rm -rf $(WORK) $(VHDL_SRC) $(VLOG_SRC) la.vhd $(TOP_MODULE).prj impactrc _impactbatch.log $(BOARD_NAME).svf
