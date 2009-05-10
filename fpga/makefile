@@ -16,7 +16,8 @@ WORK=work-$(BOARD_NAME)
 TOP_MODULE = la
 
 # Source files
-VHDL_SRC = clockman.vhd \
+VHDL_SRC = BRAM8k32bit.vhd \
+      clockman.vhd \
       controller.vhd \
       core.vhd \
       decoder.vhd \
@@ -28,15 +29,16 @@ VHDL_SRC = clockman.vhd \
       la.vhd \
       prescaler.vhd \
       receiver.vhd \
+      rle_enc.vhd \
       sampler.vhd \
       sram.vhd \
+      sram_bram.vhd \
       stage.vhd \
       sync.vhd \
       transmitter.vhd \
       trigger.vhd
 
 TB_SRC = test_core_simple.vhd
-
 
 .PHONY: all clean project
 
@@ -46,8 +48,8 @@ xflow: project
 	@rm -rf $(WORK)
 	@mkdir -p $(WORK)
 	@cp ucf/$(BOARD_NAME).ucf $(WORK)/$(TOP_MODULE).ucf
-	@for i in $(VHDL_SRC); do ln -s src/$$i .; done
-	@for i in $(VLOG_SRC); do ln -s src/$$i .; done
+	@for i in $(VHDL_SRC); do ln -sf src/$$i .; done
+	@for i in $(VLOG_SRC); do ln -sf src/$$i .; done
 	xflow -wd $(WORK) -p $(PART) -synth $(SYNTH) -implement $(IMPLEMENT) -config bitgen $(TOP_MODULE) 
 
 project:
