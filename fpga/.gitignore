@@ -1,2 +1,6 @@
 la.prj
 work-la
+/*.vhd
+/impactrc
+/_impactbatch.log
+/work-*
