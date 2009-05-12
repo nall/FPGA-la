@@ -11,41 +11,41 @@
 
 
 # Crystal Clock - use 50MHz onboard oscillator
-NET "xtalClock" LOC = "B8" | IOSTANDARD = LVCMOS33 ;
+NET "xtalClock" LOC = "B8" | IOSTANDARD = LVCMOS33;
 # Define clock period for 50 MHz oscillator (40%/60% duty-cycle)
-NET "xtalClock" PERIOD = 20.0ns HIGH 40%;
+#NET "xtalClock" PERIOD = 20.0ns HIGH 40%;
 # external Clock - use Auxiliary clock
-NET "exClock"  LOC = "U9" | IOSTANDARD = LVCMOS33 ;
+NET "exClock"  LOC = "U9" | IOSTANDARD = LVCMOS33;
 
 # This overrides ERROR:Place:1018 
 NET "exClock" CLOCK_DEDICATED_ROUTE = FALSE;
 
 # Four 7-Segment LED displays
-NET "an<0>"  LOC = "F17" | IOSTANDARD = LVTTL ;
-NET "an<1>"  LOC = "H17" | IOSTANDARD = LVTTL ;
-NET "an<2>"  LOC = "C18" | IOSTANDARD = LVTTL ;
-NET "an<3>"  LOC = "F15" | IOSTANDARD = LVTTL ;
-NET "segment<0>"  LOC = "L18" | IOSTANDARD = LVTTL ;
-NET "segment<1>"  LOC = "F18" | IOSTANDARD = LVTTL ;
-NET "segment<2>"  LOC = "D17" | IOSTANDARD = LVTTL ;
-NET "segment<3>"  LOC = "D16" | IOSTANDARD = LVTTL ;
-NET "segment<4>"  LOC = "G14" | IOSTANDARD = LVTTL ;
-NET "segment<5>"  LOC = "J17" | IOSTANDARD = LVTTL ;
-NET "segment<6>"  LOC = "H14" | IOSTANDARD = LVTTL ;
-NET "segment<7>"  LOC = "C17" | IOSTANDARD = LVTTL ;
+NET "an<0>"  LOC = "F17" | IOSTANDARD = LVTTL;
+NET "an<1>"  LOC = "H17" | IOSTANDARD = LVTTL;
+NET "an<2>"  LOC = "C18" | IOSTANDARD = LVTTL;
+NET "an<3>"  LOC = "F15" | IOSTANDARD = LVTTL;
+NET "segment<0>"  LOC = "L18" | IOSTANDARD = LVTTL;
+NET "segment<1>"  LOC = "F18" | IOSTANDARD = LVTTL;
+NET "segment<2>"  LOC = "D17" | IOSTANDARD = LVTTL;
+NET "segment<3>"  LOC = "D16" | IOSTANDARD = LVTTL;
+NET "segment<4>"  LOC = "G14" | IOSTANDARD = LVTTL;
+NET "segment<5>"  LOC = "J17" | IOSTANDARD = LVTTL;
+NET "segment<6>"  LOC = "H14" | IOSTANDARD = LVTTL;
+NET "segment<7>"  LOC = "C17" | IOSTANDARD = LVTTL;
 
 # Removed ready50 (next sample ready)
-# NET "ready50" LOC = "m11" | IOSTANDARD = LVTTL ;
+# NET "ready50" LOC = "m11" | IOSTANDARD = LVTTL;
 
 # LED use LED<7:0>
-NET "led<0>"  LOC = "J14" | IOSTANDARD = LVTTL ;
-NET "led<1>"  LOC = "J15" | IOSTANDARD = LVTTL ;
-NET "led<2>"  LOC = "K15" | IOSTANDARD = LVTTL ;
-NET "led<3>"  LOC = "K14" | IOSTANDARD = LVTTL ;
-NET "led<4>"  LOC = "E16" | IOSTANDARD = LVTTL ;
-NET "led<5>"  LOC = "P16" | IOSTANDARD = LVTTL ;
-NET "led<6>"  LOC = "E4" | IOSTANDARD = LVTTL ;
-NET "led<7>"  LOC = "P4" | IOSTANDARD = LVTTL ;
+NET "led<0>"  LOC = "J14" | IOSTANDARD = LVTTL;
+NET "led<1>"  LOC = "J15" | IOSTANDARD = LVTTL;
+NET "led<2>"  LOC = "K15" | IOSTANDARD = LVTTL;
+NET "led<3>"  LOC = "K14" | IOSTANDARD = LVTTL;
+NET "led<4>"  LOC = "E16" | IOSTANDARD = LVTTL;
+NET "led<5>"  LOC = "P16" | IOSTANDARD = LVTTL;
+NET "led<6>"  LOC = "E4" | IOSTANDARD = LVTTL;
+NET "led<7>"  LOC = "P4" | IOSTANDARD = LVTTL;
 
 # Reset - use BTN<3>
 NET "resetSwitch"  LOC = "H13" | IOSTANDARD = LVTTL;
