@@ -50,8 +50,8 @@ xflow: project
 	@cp ucf/$(BOARD_NAME).ucf $(WORK)/$(TOP_MODULE).ucf
 	@for i in $(VHDL_SRC); do ln -sf src/$$i .; done
 	@for i in $(VLOG_SRC); do ln -sf src/$$i .; done
-	@ln -s la-$(BOARD_NAME).vhd la.vhd
-	xflow -wd $(WORK) -p $(PART) -synth $(SYNTH) -implement $(IMPLEMENT) -config bitgen $(TOP_MODULE) 
+	@ln -sf la-$(BOARD_NAME).vhd la.vhd
+	xflow -wd $(WORK) -rd reports -p $(PART) -synth $(SYNTH) -implement $(IMPLEMENT) -config bitgen $(TOP_MODULE) 
 
 project:
 	@rm -f $(TOP_MODULE).prj
