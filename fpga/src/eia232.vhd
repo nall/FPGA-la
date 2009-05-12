@@ -109,6 +109,9 @@ signal disabledGroupsReg : std_logic_vector(3 downto 0);
 signal opcode : std_logic_vector(7 downto 0);
 signal opdata : std_logic_vector(31 downto 0);
 
+-- synchronization
+signal rxBuf : std_logic;
+
 begin
 	cmd <= opdata & opcode;
 	execute <= executeReg;
@@ -117,6 +120,8 @@ begin
 	process(clock)
 	begin
 		if rising_edge(clock) then
+            rxBuf <= rx;
+
 			id <= '0'; xon <= '0'; xoff <= '0'; wrFlags <= '0';
 			executePrev <= executeReg;
 			if executePrev = '0' and executeReg = '1' then
@@ -158,7 +163,7 @@ begin
 		RATE => RATE
 	)
 	PORT MAP(
-		rx => rx,
+		rx => rxBuf,
 		clock => clock,
 		trxClock => trxClock,
 		reset => reset,

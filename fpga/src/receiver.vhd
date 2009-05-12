@@ -86,6 +86,7 @@ begin
 		end if;
 	end process;
 
+
 	process(trxClock, state, counter, bitcount, bytecount, dataBuf, opcode, rx)
 	begin
 		case state is
